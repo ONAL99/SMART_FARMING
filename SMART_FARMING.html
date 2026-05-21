@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Farming Cabai — IoT Irigasi Otomatis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ── RESET & BASE ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #0d0f0b;
+  --bg2:      #131510;
+  --bg3:      #1a1d16;
+  --surface:  #1f2219;
+  --border:   #2a2e23;
+  --green:    #4ade80;
+  --green2:   #22c55e;
+  --greenDim: #16a34a;
+  --amber:    #fbbf24;
+  --text:     #e8ead4;
+  --textSoft: #9a9c88;
+  --textMute: #5a5c4a;
+  --red:      #f87171;
+  --blue:     #60a5fa;
+  --mono:     'IBM Plex Mono', monospace;
+  --serif:    'Playfair Display', Georgia, serif;
+  --sans:     'DM Sans', sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  font-size: 15px;
+  overflow-x: hidden;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ── NAV ─────────────────────────────────────────────────── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(13,15,11,0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem;
+  height: 52px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+.nav-brand {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--green);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.nav-links {
+  display: flex; gap: 1.8rem; list-style: none;
+}
+
+.nav-links a {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--textMute);
+  text-decoration: none;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text); }
+
+/* ── HERO ─────────────────────────────────────────────────── */
+#hero {
+  min-height: 100vh;
+  display: flex; align-items: center;
+  padding: 6rem 2rem 4rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-grid-bg {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 48px 48px;
+  opacity: 0.35;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+}
+
+.hero-glow {
+  position: absolute;
+  top: 20%; left: 50%; transform: translateX(-50%);
+  width: 600px; height: 300px;
+  background: radial-gradient(ellipse, rgba(74,222,128,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero-inner {
+  max-width: 860px; margin: 0 auto; position: relative; z-index: 1;
+}
+
+.hero-tag {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--green);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 2rem;
+  padding: 6px 14px;
+  border: 1px solid rgba(74,222,128,0.25);
+  border-radius: 2px;
+  background: rgba(74,222,128,0.05);
+}
+
+.hero-tag::before {
+  content: '';
+  width: 6px; height: 6px;
+  background: var(--green);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.8); }
+}
+
+.hero-title {
+  font-family: var(--serif);
+  font-size: clamp(3rem, 7vw, 5.5rem);
+  line-height: 1.05;
+  color: var(--text);
+  margin-bottom: 0.3rem;
+}
+
+.hero-title em {
+  font-style: italic;
+  color: var(--green);
+}
+
+.hero-subtitle {
+  font-family: var(--serif);
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  color: var(--textMute);
+  margin-bottom: 1.8rem;
+  font-style: italic;
+}
+
+.hero-desc {
+  font-size: 16px;
+  color: var(--textSoft);
+  max-width: 580px;
+  line-height: 1.75;
+  margin-bottom: 2.5rem;
+}
+
+.hero-pills {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  margin-bottom: 3rem;
+}
+
+.pill {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 5px 14px;
+  border-radius: 2px;
+  letter-spacing: 0.06em;
+}
+
+.pill-green {
+  background: rgba(74,222,128,0.1);
+  border: 1px solid rgba(74,222,128,0.3);
+  color: var(--green);
+}
+
+.pill-amber {
+  background: rgba(251,191,36,0.1);
+  border: 1px solid rgba(251,191,36,0.3);
+  color: var(--amber);
+}
+
+.pill-blue {
+  background: rgba(96,165,250,0.1);
+  border: 1px solid rgba(96,165,250,0.3);
+  color: var(--blue);
+}
+
+.hero-stats {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  max-width: 520px;
+}
+
+.stat {
+  background: var(--bg2);
+  padding: 1.2rem 1.4rem;
+}
+
+.stat-num {
+  font-family: var(--serif);
+  font-size: 2rem;
+  color: var(--text);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.stat-num span { color: var(--green); }
+
+.stat-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--textMute);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ── SECTION WRAPPER ──────────────────────────────────────── */
+section {
+  padding: 5rem 2rem;
+  border-top: 1px solid var(--border);
+}
+
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.sec-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--green);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 0.8rem;
+  display: flex; align-items: center; gap: 10px;
+}
+
+.sec-label::after {
+  content: '';
+  flex: 1; max-width: 60px;
+  height: 1px;
+  background: var(--greenDim);
+}
+
+.sec-title {
+  font-family: var(--serif);
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  color: var(--text);
+  margin-bottom: 3rem;
+  line-height: 1.2;
+}
+
+/* ── ARSITEKTUR ───────────────────────────────────────────── */
+#arsitektur .arch-wrap {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 0;
+  align-items: stretch;
+}
+
+.arch-node {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 2rem;
+}
+
+.arch-node-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--green);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 1.4rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.arch-item {
+  display: flex; align-items: flex-start; gap: 12px;
+  margin-bottom: 1rem;
+  padding: 0.8rem;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+}
+
+.arch-item-badge {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--textMute);
+  letter-spacing: 0.08em;
+  background: var(--bg);
+  padding: 3px 7px;
+  border: 1px solid var(--border);
+  white-space: nowrap;
+  margin-top: 2px;
+}
+
+.arch-item-body {}
+
+.arch-item-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.arch-item-desc {
+  font-size: 11.5px;
+  color: var(--textMute);
+}
+
+.arch-channel {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 1.5rem 1rem;
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  gap: 16px;
+  min-width: 120px;
+}
+
+.arch-channel-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--amber);
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+
+.arch-arrow {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+
+.arrow-line {
+  width: 1px;
+  height: 40px;
+  background: var(--border);
+  position: relative;
+}
+
+.arrow-badge {
+  font-family: var(--mono);
+  font-size: 9px;
+  padding: 3px 8px;
+  border: 1px solid;
+  letter-spacing: 0.06em;
+}
+
+.arrow-badge.up { color: var(--blue); border-color: rgba(96,165,250,0.3); background: rgba(96,165,250,0.07); }
+.arrow-badge.down { color: var(--green); border-color: rgba(74,222,128,0.3); background: rgba(74,222,128,0.07); }
+
+/* ── KEUNGGULAN ───────────────────────────────────────────── */
+.unggulan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+}
+
+.unggulan-card {
+  background: var(--bg2);
+  padding: 2rem;
+  transition: background 0.2s;
+}
+
+.unggulan-card:hover { background: var(--surface); }
+
+.unggulan-num {
+  font-family: var(--serif);
+  font-size: 3rem;
+  color: var(--border);
+  line-height: 1;
+  margin-bottom: 1rem;
+}
+
+.unggulan-title {
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  color: var(--text);
+  margin-bottom: 0.6rem;
+}
+
+.unggulan-accent {
+  width: 24px; height: 2px;
+  background: var(--green);
+  margin-bottom: 0.8rem;
+}
+
+.unggulan-desc {
+  font-size: 13.5px;
+  color: var(--textSoft);
+  line-height: 1.7;
+}
+
+/* ── THRESHOLD ────────────────────────────────────────────── */
+.threshold-intro {
+  font-size: 14px;
+  color: var(--textSoft);
+  max-width: 640px;
+  margin-bottom: 2rem;
+  line-height: 1.75;
+}
+
+.threshold-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-bottom: 1.5rem;
+}
+
+.threshold-table th {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--textMute);
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+}
+
+.threshold-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  color: var(--textSoft);
+  line-height: 1.5;
+}
+
+.threshold-table td:first-child { color: var(--text); font-weight: 500; }
+.threshold-table tr:hover td { background: var(--surface); }
+
+.badge-on  { font-family: var(--mono); font-size: 10px; padding: 3px 9px; background: rgba(74,222,128,0.12); color: var(--green2); border: 1px solid rgba(74,222,128,0.25); letter-spacing: 0.06em; }
+.badge-off { font-family: var(--mono); font-size: 10px; padding: 3px 9px; background: rgba(96,165,250,0.12); color: var(--blue); border: 1px solid rgba(96,165,250,0.25); letter-spacing: 0.06em; }
+.badge-warn{ font-family: var(--mono); font-size: 10px; padding: 3px 9px; background: rgba(251,191,36,0.12); color: var(--amber); border: 1px solid rgba(251,191,36,0.25); letter-spacing: 0.06em; }
+.badge-red { font-family: var(--mono); font-size: 10px; padding: 3px 9px; background: rgba(248,113,113,0.12); color: var(--red); border: 1px solid rgba(248,113,113,0.25); letter-spacing: 0.06em; }
+
+.priority-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--amber);
+  padding: 1.2rem 1.5rem;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--textSoft);
+  line-height: 1.8;
+}
+
+.priority-box strong { color: var(--amber); }
+
+/* ── CARA KERJA ───────────────────────────────────────────── */
+.flow-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  counter-reset: flow;
+}
+
+.flow-step {
+  background: var(--bg2);
+  padding: 1.8rem;
+  position: relative;
+  counter-increment: flow;
+  transition: background 0.2s;
+}
+
+.flow-step:hover { background: var(--surface); }
+
+.flow-step::before {
+  content: "0" counter(flow);
+  font-family: var(--serif);
+  font-size: 3.5rem;
+  color: var(--border);
+  position: absolute;
+  top: 1rem; right: 1.2rem;
+  line-height: 1;
+}
+
+.flow-icon {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.flow-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+
+.flow-desc {
+  font-size: 12.5px;
+  color: var(--textMute);
+  line-height: 1.65;
+}
+
+/* ── LCD PREVIEW ──────────────────────────────────────────── */
+.lcd-wrap {
+  display: flex; gap: 2rem; align-items: flex-start; flex-wrap: wrap;
+}
+
+.lcd-screen {
+  font-family: var(--mono);
+  font-size: 13px;
+  background: #0a1a0a;
+  border: 2px solid #2a4a2a;
+  border-radius: 4px;
+  padding: 1.2rem 1.4rem;
+  line-height: 2;
+  color: #4ade80;
+  box-shadow: 0 0 20px rgba(74,222,128,0.1), inset 0 0 20px rgba(0,0,0,0.5);
+  min-width: 280px;
+  white-space: pre;
+}
+
+.lcd-explain {
+  flex: 1; min-width: 260px;
+}
+
+.lcd-row {
+  display: flex; align-items: flex-start; gap: 12px;
+  margin-bottom: 0.8rem;
+}
+
+.lcd-row-num {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--textMute);
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  white-space: nowrap;
+  margin-top: 2px;
+}
+
+.lcd-row-text {
+  font-size: 12.5px;
+  color: var(--textSoft);
+  line-height: 1.5;
+}
+
+/* ── PENGEMBANGAN ─────────────────────────────────────────── */
+.dev-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.dev-card {
+  border: 1px solid var(--border);
+  padding: 1.5rem;
+  position: relative;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.dev-card:hover {
+  border-color: var(--greenDim);
+  background: var(--surface);
+}
+
+.dev-tag {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  color: var(--textMute);
+  text-transform: uppercase;
+  margin-bottom: 0.8rem;
+  display: inline-block;
+}
+
+.dev-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+
+.dev-desc {
+  font-size: 12.5px;
+  color: var(--textMute);
+  line-height: 1.65;
+}
+
+.dev-effort {
+  margin-top: 0.8rem;
+  display: flex; align-items: center; gap: 8px;
+}
+
+.effort-dots {
+  display: flex; gap: 3px;
+}
+
+.effort-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+.effort-dot.filled { background: var(--green); }
+
+.effort-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--textMute);
+  letter-spacing: 0.06em;
+}
+
+/* ── SPESIFIKASI ──────────────────────────────────────────── */
+.spec-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+}
+
+.spec-group {
+  background: var(--bg2);
+  padding: 1.8rem;
+}
+
+.spec-group-title {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--green);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 1.2rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.spec-row {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+  gap: 1rem;
+}
+
+.spec-row:last-child { border-bottom: none; }
+
+.spec-key {
+  font-size: 12px;
+  color: var(--textMute);
+  white-space: nowrap;
+}
+
+.spec-val {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--text);
+  text-align: right;
+}
+
+/* ── FOOTER ───────────────────────────────────────────────── */
+footer {
+  padding: 2.5rem;
+  border-top: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 1rem;
+}
+
+.footer-brand {
+  font-family: var(--serif);
+  font-size: 1.1rem;
+  color: var(--text);
+}
+
+.footer-brand span { color: var(--green); font-style: italic; }
+
+.footer-note {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--textMute);
+  letter-spacing: 0.06em;
+}
+
+/* ── FADE IN ANIMATION ────────────────────────────────────── */
+.fade-in {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── MOBILE ───────────────────────────────────────────────── */
+@media (max-width: 700px) {
+  nav { padding: 0 1rem; }
+  .nav-links { display: none; }
+  #hero { padding: 5rem 1.2rem 3rem; }
+  section { padding: 3.5rem 1.2rem; }
+  .arch-wrap { grid-template-columns: 1fr; }
+  .arch-channel { flex-direction: row; min-width: auto; padding: 1rem; border: 1px solid var(--border); border-left: none; border-right: none; }
+  .hero-stats { grid-template-columns: 1fr 1fr 1fr; max-width: 100%; }
+  footer { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">SmartFarm / Cabai</div>
+  <ul class="nav-links">
+    <li><a href="#arsitektur">Arsitektur</a></li>
+    <li><a href="#keunggulan">Keunggulan</a></li>
+    <li><a href="#threshold">Threshold</a></li>
+    <li><a href="#cara-kerja">Cara Kerja</a></li>
+    <li><a href="#pengembangan">Pengembangan</a></li>
+    <li><a href="#spesifikasi">Spesifikasi</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-grid-bg"></div>
+  <div class="hero-glow"></div>
+  <div class="hero-inner">
+    <div class="hero-tag">Rekayasa Inovasi Teknologi · IoT · Edge Computing</div>
+    <h1 class="hero-title">Smart Farming<br><em>Cabai</em></h1>
+    <p class="hero-subtitle">Sistem Irigasi Otonom</p>
+    <p class="hero-desc">
+      Sistem pemantauan dan irigasi otomatis untuk tanaman cabai berbasis dua ESP32
+      yang berkomunikasi secara peer-to-peer menggunakan protokol ESP-NOW.
+      Bekerja penuh di edge — tanpa internet, tanpa cloud, tanpa biaya langganan.
+    </p>
+    <div class="hero-pills">
+      <span class="pill pill-green">ESP-NOW · P2P</span>
+      <span class="pill pill-green">Threshold-based Control</span>
+      <span class="pill pill-amber">Tanpa Internet</span>
+      <span class="pill pill-amber">Fully Autonomous</span>
+      <span class="pill pill-blue">DHT22 + Soil Moisture</span>
+      <span class="pill pill-blue">LCD 20×4 · Relay</span>
+    </div>
+    <div class="hero-stats">
+      <div class="stat">
+        <div class="stat-num">500<span>ms</span></div>
+        <div class="stat-label">Update interval</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">2<span>×</span></div>
+        <div class="stat-label">ESP32 Node</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">0<span>G</span></div>
+        <div class="stat-label">Butuh internet</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ARSITEKTUR -->
+<section id="arsitektur">
+  <div class="container fade-in">
+    <div class="sec-label">01 — Arsitektur</div>
+    <h2 class="sec-title">Dua Node, Satu Sistem</h2>
+    <div class="arch-wrap">
+
+      <!-- Node Sensor -->
+      <div class="arch-node">
+        <div class="arch-node-title">Node Sensor · ESP32</div>
+        <div class="arch-item">
+          <span class="arch-item-badge">GPIO 4</span>
+          <div class="arch-item-body">
+            <div class="arch-item-name">DHT22</div>
+            <div class="arch-item-desc">Suhu (°C) &amp; kelembaban udara (%RH) · update tiap 2000 ms non-blocking</div>
+          </div>
+        </div>
+        <div class="arch-item">
+          <span class="arch-item-badge">GPIO 34</span>
+          <div class="arch-item-body">
+            <div class="arch-item-name">Soil Moisture (Kapasitif)</div>
+            <div class="arch-item-desc">Kelembaban tanah 0–100% via ADC · rata-rata 5 sampel · update tiap 500 ms</div>
+          </div>
+        </div>
+        <div class="arch-item">
+          <span class="arch-item-badge">GPIO 26</span>
+          <div class="arch-item-body">
+            <div class="arch-item-name">Relay + Pompa DC</div>
+            <div class="arch-item-desc">Active LOW · eksekusi perintah dari controller secara instan</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Channel ESP-NOW -->
+      <div class="arch-channel">
+        <div class="arch-channel-label">ESP-NOW<br>2.4 GHz</div>
+        <div class="arch-arrow">
+          <span class="arrow-badge up">SensorData →</span>
+          <div class="arrow-line"></div>
+          <span class="arrow-badge down">← Command</span>
+        </div>
+        <div class="arch-channel-label">P2P<br>No Router</div>
+      </div>
+
+      <!-- Node Controller -->
+      <div class="arch-node">
+        <div class="arch-node-title">Node Controller · ESP32</div>
+        <div class="arch-item">
+          <span class="arch-item-badge">I2C 21/22</span>
+          <div class="arch-item-body">
+            <div class="arch-item-name">LCD 20×4</div>
+            <div class="arch-item-desc">Tampil suhu, RH, soil%, status pompa · scroll counter penyiraman tiap 4 dtk</div>
+          </div>
+        </div>
+        <div class="arch-item">
+          <span class="arch-item-badge">GPIO 25</span>
+          <div class="arch-item-body">
+            <div class="arch-item-name">Switch 1 — Mode</div>
+            <div class="arch-item-desc">Latching NO · toggle mode AUTO ↔ MANUAL</div>
+          </div>
+        </div>
+        <div class="arch-item">
+          <span class="arch-item-badge">GPIO 19</span>
+          <div class="arch-item-body">
+            <div class="arch-item-name">Switch 2 — Pompa</div>
+            <div class="arch-item-desc">Latching NO · ON/OFF pompa manual · hanya aktif di mode MANUAL</div>
+          </div>
+        </div>
+        <div class="arch-item">
+          <span class="arch-item-badge">Logic</span>
+          <div class="arch-item-body">
+            <div class="arch-item-name">Threshold Processor</div>
+            <div class="arch-item-desc">Analisis data tiap paket · kirim perintah hanya saat ada perubahan state</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- KEUNGGULAN -->
+<section id="keunggulan">
+  <div class="container fade-in">
+    <div class="sec-label">02 — Keunggulan</div>
+    <h2 class="sec-title">Mengapa Sistem Ini?</h2>
+    <div class="unggulan-grid">
+      <div class="unggulan-card">
+        <div class="unggulan-num">01</div>
+        <h3 class="unggulan-title">Biaya Sangat Murah</h3>
+        <div class="unggulan-accent"></div>
+        <p class="unggulan-desc">
+          Seluruh komponen — ESP32, DHT22, sensor kapasitif, relay, dan pompa DC — mudah
+          didapat dengan harga terjangkau. Tidak ada biaya cloud, server, atau langganan
+          bulanan. Total biaya hardware jauh di bawah solusi komersial serupa.
+        </p>
+      </div>
+      <div class="unggulan-card">
+        <div class="unggulan-num">02</div>
+        <h3 class="unggulan-title">Sepenuhnya Otonom</h3>
+        <div class="unggulan-accent"></div>
+        <p class="unggulan-desc">
+          Controller memproses data sensor setiap 500 ms dan mengambil keputusan irigasi
+          secara mandiri berdasarkan threshold agronomis cabai. Pompa menyala dan mati
+          otomatis — tidak butuh operator 24 jam.
+        </p>
+      </div>
+      <div class="unggulan-card">
+        <div class="unggulan-num">03</div>
+        <h3 class="unggulan-title">Local Edge — Tanpa Internet</h3>
+        <div class="unggulan-accent"></div>
+        <p class="unggulan-desc">
+          ESP-NOW berkomunikasi langsung antar perangkat tanpa melalui router, modem,
+          atau koneksi internet. Ideal untuk lahan pertanian terpencil. Latensi rendah,
+          tidak bergantung infrastruktur eksternal.
+        </p>
+      </div>
+      <div class="unggulan-card">
+        <div class="unggulan-num">04</div>
+        <h3 class="unggulan-title">Respons Cepat</h3>
+        <div class="unggulan-accent"></div>
+        <p class="unggulan-desc">
+          Interval kirim data 500 ms tanpa blocking delay. Switch dibaca setiap cycle loop
+          untuk respons instan. Perintah pompa dikirim hanya saat ada perubahan state —
+          menghemat bandwidth ESP-NOW dan mempercepat eksekusi.
+        </p>
+      </div>
+      <div class="unggulan-card">
+        <div class="unggulan-num">05</div>
+        <h3 class="unggulan-title">Keamanan Berlapis</h3>
+        <div class="unggulan-accent"></div>
+        <p class="unggulan-desc">
+          Safety timer otomatis mematikan pompa jika menyala lebih dari 5 menit 10 detik,
+          mencegah kerusakan pompa atau banjir lahan akibat sensor error atau
+          gangguan komunikasi ESP-NOW.
+        </p>
+      </div>
+      <div class="unggulan-card">
+        <div class="unggulan-num">06</div>
+        <h3 class="unggulan-title">Kontrol Manual Terintegrasi</h3>
+        <div class="unggulan-accent"></div>
+        <p class="unggulan-desc">
+          Dua switch latching memungkinkan operator beralih ke mode manual kapan saja
+          tanpa mematikan sistem. Mode AUTO dan MANUAL dapat berganti seamless — sistem
+          kembali otomatis begitu switch dikembalikan.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- THRESHOLD -->
+<section id="threshold">
+  <div class="container fade-in">
+    <div class="sec-label">03 — Threshold</div>
+    <h2 class="sec-title">Parameter Kontrol Cabai</h2>
+    <p class="threshold-intro">
+      Threshold disusun berdasarkan literatur agronomi tanaman cabai (<em>Capsicum annuum</em>).
+      Sistem menggunakan logika prioritas bertingkat — kondisi dengan risiko tertinggi
+      selalu dievaluasi lebih dahulu. Mekanisme hysteresis (ON &lt;55% / OFF ≥75%)
+      mencegah pompa nyala-mati terlalu cepat.
+    </p>
+    <table class="threshold-table">
+      <thead>
+        <tr>
+          <th>Kondisi</th>
+          <th>Parameter</th>
+          <th>Nilai</th>
+          <th>Aksi</th>
+          <th>Alasan Agronomis</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Kelembaban udara ekstrem</td>
+          <td>RH udara</td>
+          <td>&gt; 90%</td>
+          <td><span class="badge-red">PAKSA OFF</span></td>
+          <td>Tanah jenuh, risiko tinggi busuk akar dan serangan jamur Phytophthora</td>
+        </tr>
+        <tr>
+          <td>Tanah terlalu kering</td>
+          <td>Soil moisture</td>
+          <td>&lt; 55%</td>
+          <td><span class="badge-on">ON</span></td>
+          <td>Cabai sangat sensitif kekeringan, terutama fase pembungaan dan pembuahan</td>
+        </tr>
+        <tr>
+          <td>Suhu tinggi + tanah belum cukup</td>
+          <td>Suhu &amp; Soil</td>
+          <td>&gt;32°C &amp; &lt;75%</td>
+          <td><span class="badge-on">ON</span></td>
+          <td>Evapotranspirasi meningkat, tanaman kehilangan air lebih cepat dari biasa</td>
+        </tr>
+        <tr>
+          <td>Tanah sudah cukup basah</td>
+          <td>Soil moisture</td>
+          <td>≥ 75%</td>
+          <td><span class="badge-off">OFF</span></td>
+          <td>Kelembaban optimal tercapai, hentikan irigasi (hysteresis 55–75%)</td>
+        </tr>
+        <tr>
+          <td>Kondisi optimal keseluruhan</td>
+          <td>Semua parameter</td>
+          <td>24–30°C · 60–80% · 55–75%</td>
+          <td><span class="badge-on">OPTIMAL</span></td>
+          <td>Seluruh parameter dalam rentang ideal pertumbuhan cabai</td>
+        </tr>
+        <tr>
+          <td>Safety timer terlampaui</td>
+          <td>Durasi pompa ON</td>
+          <td>&gt; 5 menit 10 dtk</td>
+          <td><span class="badge-warn">AUTO OFF</span></td>
+          <td>Proteksi hardware, mode kembali ke AUTO, cegah banjir lahan</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="priority-box">
+      <strong>Urutan Prioritas (tertinggi → terendah):</strong><br>
+      RH &gt; 90% (paksa OFF) → Soil &lt; 55% (ON) → Suhu &gt; 32°C + Soil &lt; 75% (ON) → Soil ≥ 75% (OFF) → Safety Timer (auto OFF)
+    </div>
+  </div>
+</section>
+
+<!-- CARA KERJA -->
+<section id="cara-kerja">
+  <div class="container fade-in">
+    <div class="sec-label">04 — Cara Kerja</div>
+    <h2 class="sec-title">Alur Sistem</h2>
+    <div class="flow-grid">
+      <div class="flow-step">
+        <div class="flow-icon">⚡</div>
+        <div class="flow-title">Boot & Handshake</div>
+        <div class="flow-desc">Kedua ESP32 menyala, inisialisasi WiFi STA mode, daftarkan peer ESP-NOW menggunakan MAC Address masing-masing.</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-icon">📡</div>
+        <div class="flow-title">Baca Sensor</div>
+        <div class="flow-desc">DHT22 dibaca tiap 2000 ms non-blocking. Soil moisture dibaca tiap 500 ms tanpa delay. Data dikemas dalam struct SensorData.</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-icon">→</div>
+        <div class="flow-title">Kirim via ESP-NOW</div>
+        <div class="flow-desc">Node sensor mengirim paket SensorData ke controller tiap 500 ms. Latensi ESP-NOW &lt;2 ms, tidak membutuhkan router.</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-icon">🧠</div>
+        <div class="flow-title">Proses Threshold</div>
+        <div class="flow-desc">Controller mengevaluasi data berdasarkan 4 aturan threshold prioritas. Keputusan pompa hanya dikirim saat state berubah.</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-icon">←</div>
+        <div class="flow-title">Kirim Perintah</div>
+        <div class="flow-desc">CommandData (pompaNyala, modeManual) dikirim balik ke sensor node via ESP-NOW. Eksekusi relay langsung tanpa delay tambahan.</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-icon">💧</div>
+        <div class="flow-title">Eksekusi Aktuator</div>
+        <div class="flow-desc">Relay diaktifkan (active LOW) sesuai perintah. Counter penyiraman dan durasi diakumulasi di controller, ditampilkan di LCD.</div>
+      </div>
+    </div>
+
+    <!-- LCD Preview -->
+    <div style="margin-top: 3rem;">
+      <div class="sec-label" style="margin-bottom: 1rem;">Tampilan LCD 20×4</div>
+      <div class="lcd-wrap">
+        <div class="lcd-screen">🌡 Suhu: 28.3°C      
+💧 RH:   72.1%      
+💧 Soil:  63% ✓OPTIMAL
+Pompa:OFF  OPTIMAL  </div>
+        <div class="lcd-explain">
+          <div class="lcd-row">
+            <span class="lcd-row-num">BARIS 1</span>
+            <div class="lcd-row-text">Suhu real-time dari DHT22 dalam °C</div>
+          </div>
+          <div class="lcd-row">
+            <span class="lcd-row-num">BARIS 2</span>
+            <div class="lcd-row-text">Kelembaban udara (Relative Humidity) dari DHT22</div>
+          </div>
+          <div class="lcd-row">
+            <span class="lcd-row-num">BARIS 3</span>
+            <div class="lcd-row-text">Soil moisture dalam % + label KERING / BASAH / OPTIMAL</div>
+          </div>
+          <div class="lcd-row">
+            <span class="lcd-row-num">BARIS 4</span>
+            <div class="lcd-row-text">Status pompa + kondisi keseluruhan. Bergantian tiap 4 detik dengan counter penyiraman: <code style="font-family:var(--mono);font-size:11px;color:var(--green)">#3  Total:  127s</code></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PENGEMBANGAN -->
+<section id="pengembangan">
+  <div class="container fade-in">
+    <div class="sec-label">05 — Potensi Pengembangan</div>
+    <h2 class="sec-title">Roadmap &amp; Ide Lanjutan</h2>
+    <div class="dev-grid">
+      <div class="dev-card">
+        <span class="dev-tag">Hardware Minor</span>
+        <div class="dev-title">RTC + Jadwal Penyiraman</div>
+        <div class="dev-desc">Tambah modul RTC DS3231 untuk menjadwalkan penyiraman pada jam tertentu, memungkinkan irigasi pagi/sore otomatis terlepas dari kondisi sensor.</div>
+        <div class="dev-effort">
+          <div class="effort-dots">
+            <div class="effort-dot filled"></div>
+            <div class="effort-dot filled"></div>
+            <div class="effort-dot"></div>
+            <div class="effort-dot"></div>
+          </div>
+          <span class="effort-label">Effort: Medium</span>
+        </div>
+      </div>
+      <div class="dev-card">
+        <span class="dev-tag">Software Minor</span>
+        <div class="dev-title">Logging ke SD Card</div>
+        <div class="dev-desc">Simpan data sensor dan riwayat penyiraman ke SD card dalam format CSV. Memungkinkan analisis historis dan audit kondisi tanaman.</div>
+        <div class="dev-effort">
+          <div class="effort-dots">
+            <div class="effort-dot filled"></div>
+            <div class="effort-dot filled"></div>
+            <div class="effort-dot"></div>
+            <div class="effort-dot"></div>
+          </div>
+          <span class="effort-label">Effort: Medium</span>
+        </div>
+      </div>
+      <div class="dev-card">
+        <span class="dev-tag">Hardware Minor</span>
+        <div class="dev-title">Panel Surya + Baterai</div>
+        <div class="dev-desc">Node sensor ditenagai panel surya 5W + baterai Li-Ion. Aktifkan light sleep ESP32 di antara interval baca sensor untuk efisiensi daya maksimal.</div>
+        <div class="dev-effort">
+          <div class="effort-dots">
+            <div class="effort-dot filled"></div>
+            <div class="effort-dot filled"></div>
+            <div class="effort-dot filled"></div>
+            <div class="effort-dot"></div>
+          </div>
+          <span class="effort-label">Effort: High</span>
+        </div>
+      </div>
+      <div class="dev-card">
+        <span class="dev-tag">Software Major</span>
+        <div class="dev-title">Dashboard Web via WiFi AP</div>
+        <div class="dev-desc">Controller ESP32 berjalan sebagai access point + web server. Dashboard real-time dapat diakses dari HP tanpa internet — tetap local edge.</div>
+        <div class="dev-effort">
+          <div class="effort-dots">
+            <div class="effort-dot filled"></div>
+            <div class="effort-dot filled"></div>
+            <div class="effort-dot filled"></div>
+            <div class="effort-dot"></div>
+          </div>
+          <span class="effort-label">Effort: High</span>
+        </div>
+      </div>
+      <div class="dev-card">
+        <span class="dev-tag">Sensor</span>
+        <div class="dev-title">Multi-Titik Soil Moisture</div>
+        <div class="dev-desc">Tambah 2–3 sensor soil di titik berbeda pada lahan. Controller menghitung rata-rata atau threshold per zona untuk irigasi yang lebih presisi.</div>
+        <div class="dev-effort">
+          <div class="effort-dots">
+            <div class="effort-dot filled"></div>
+            <div class="effort-dot filled"></div>
+            <div class="effort-dot"></div>
+            <div class="effort-dot"></div>
+          </div>
+          <span class="effort-label">Effort: Medium</span>
+        </div>
+      </div>
+      <div class="dev-card">
+        <span class="dev-tag">AI / ML</span>
+        <div class="dev-title">Adaptive Threshold via ML</div>
+        <div class="dev-desc">Kumpulkan data historis (logging), latih model ringan untuk menyesuaikan threshold secara adaptif berdasarkan fase pertumbuhan tanaman cabai.</div>
+        <div class="dev-effort">
+          <div class="effort-dots">
+            <div class="effort-dot filled"></div>
+            <div class="effort-dot filled"></div>
+            <div class="effort-dot filled"></div>
+            <div class="effort-dot filled"></div>
+          </div>
+          <span class="effort-label">Effort: Very High</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SPESIFIKASI -->
+<section id="spesifikasi">
+  <div class="container fade-in">
+    <div class="sec-label">06 — Spesifikasi</div>
+    <h2 class="sec-title">Spesifikasi Lengkap</h2>
+    <div class="spec-grid">
+      <div class="spec-group">
+        <div class="spec-group-title">Hardware</div>
+        <div class="spec-row"><span class="spec-key">Mikrokontroler</span><span class="spec-val">ESP32 × 2</span></div>
+        <div class="spec-row"><span class="spec-key">Sensor suhu/RH</span><span class="spec-val">DHT22</span></div>
+        <div class="spec-row"><span class="spec-key">Sensor tanah</span><span class="spec-val">Kapasitif · ADC</span></div>
+        <div class="spec-row"><span class="spec-key">Aktuator</span><span class="spec-val">Pompa DC + Relay</span></div>
+        <div class="spec-row"><span class="spec-key">Display</span><span class="spec-val">LCD 20×4 I2C</span></div>
+        <div class="spec-row"><span class="spec-key">Input</span><span class="spec-val">2× Switch Latching</span></div>
+      </div>
+      <div class="spec-group">
+        <div class="spec-group-title">Komunikasi</div>
+        <div class="spec-row"><span class="spec-key">Protokol</span><span class="spec-val">ESP-NOW</span></div>
+        <div class="spec-row"><span class="spec-key">Frekuensi</span><span class="spec-val">2.4 GHz</span></div>
+        <div class="spec-row"><span class="spec-key">Topologi</span><span class="spec-val">Peer-to-Peer</span></div>
+        <div class="spec-row"><span class="spec-key">Jangkauan</span><span class="spec-val">~200–300 m LOS</span></div>
+        <div class="spec-row"><span class="spec-key">Payload maks</span><span class="spec-val">250 byte</span></div>
+        <div class="spec-row"><span class="spec-key">Router</span><span class="spec-val">Tidak diperlukan</span></div>
+      </div>
+      <div class="spec-group">
+        <div class="spec-group-title">Timing & Performa</div>
+        <div class="spec-row"><span class="spec-key">Interval kirim</span><span class="spec-val">500 ms</span></div>
+        <div class="spec-row"><span class="spec-key">Update DHT22</span><span class="spec-val">2000 ms</span></div>
+        <div class="spec-row"><span class="spec-key">Refresh LCD</span><span class="spec-val">500 ms</span></div>
+        <div class="spec-row"><span class="spec-key">Scroll LCD</span><span class="spec-val">4000 ms</span></div>
+        <div class="spec-row"><span class="spec-key">Safety timer</span><span class="spec-val">5 menit 10 dtk</span></div>
+        <div class="spec-row"><span class="spec-key">Latensi ESP-NOW</span><span class="spec-val">&lt; 2 ms</span></div>
+      </div>
+      <div class="spec-group">
+        <div class="spec-group-title">Threshold Cabai</div>
+        <div class="spec-row"><span class="spec-key">Suhu optimal</span><span class="spec-val">24 – 30 °C</span></div>
+        <div class="spec-row"><span class="spec-key">Suhu maks</span><span class="spec-val">&gt; 32 °C → ON</span></div>
+        <div class="spec-row"><span class="spec-key">RH optimal</span><span class="spec-val">60 – 80 %</span></div>
+        <div class="spec-row"><span class="spec-key">RH paksa OFF</span><span class="spec-val">&gt; 90 %</span></div>
+        <div class="spec-row"><span class="spec-key">Soil ON</span><span class="spec-val">&lt; 55 %</span></div>
+        <div class="spec-row"><span class="spec-key">Soil OFF</span><span class="spec-val">≥ 75 %</span></div>
+      </div>
+      <div class="spec-group">
+        <div class="spec-group-title">Pin Mapping — Sensor</div>
+        <div class="spec-row"><span class="spec-key">DHT22 DATA</span><span class="spec-val">GPIO 4</span></div>
+        <div class="spec-row"><span class="spec-key">Soil ADC</span><span class="spec-val">GPIO 34</span></div>
+        <div class="spec-row"><span class="spec-key">Relay IN</span><span class="spec-val">GPIO 26</span></div>
+        <div class="spec-row"><span class="spec-key">Relay logic</span><span class="spec-val">Active LOW</span></div>
+        <div class="spec-row"><span class="spec-key">Pull-up DHT22</span><span class="spec-val">10kΩ ke 3.3V</span></div>
+      </div>
+      <div class="spec-group">
+        <div class="spec-group-title">Pin Mapping — Controller</div>
+        <div class="spec-row"><span class="spec-key">LCD SDA</span><span class="spec-val">GPIO 21</span></div>
+        <div class="spec-row"><span class="spec-key">LCD SCL</span><span class="spec-val">GPIO 22</span></div>
+        <div class="spec-row"><span class="spec-key">LCD addr</span><span class="spec-val">0x27 (I2C)</span></div>
+        <div class="spec-row"><span class="spec-key">Switch 1 (Mode)</span><span class="spec-val">GPIO 25</span></div>
+        <div class="spec-row"><span class="spec-key">Switch 2 (Pompa)</span><span class="spec-val">GPIO 19</span></div>
+        <div class="spec-row"><span class="spec-key">Switch wiring</span><span class="spec-val">COM→3.3V · NO→GPIO</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-brand">Smart<span>Farm</span> Cabai</div>
+  <div class="footer-note">ESP32 · ESP-NOW · DHT22 · Soil Moisture · LCD 20×4 · Rekayasa Inovasi Teknologi</div>
+</footer>
+
+<script>
+// ── Fade in on scroll ──────────────────────────────────────
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.08 });
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+// ── Active nav link ────────────────────────────────────────
+const sections = document.querySelectorAll('section[id]');
+const navLinks  = document.querySelectorAll('.nav-links a');
+window.addEventListener('scroll', () => {
+  let cur = '';
+  sections.forEach(s => { if (window.scrollY >= s.offsetTop - 80) cur = s.id; });
+  navLinks.forEach(a => {
+    a.style.color = a.getAttribute('href') === '#' + cur ? 'var(--green)' : '';
+  });
+}, { passive: true });
+</script>
+</body>
+</html>
